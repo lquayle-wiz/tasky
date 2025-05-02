@@ -48,7 +48,7 @@ jobs:
 
       - name: Write Wiz Summary and OS Package Table
         run: |
-          echo "## Wiz Vulnerability Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊 Wiz Vulnerability Summary" >> $GITHUB_STEP_SUMMARY
           echo "| Severity | Count | Fixable | Public Exploit | CISA KEV |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|-------|---------|----------------|-----------|" >> $GITHUB_STEP_SUMMARY
       
@@ -74,11 +74,13 @@ jobs:
           ' wiz-scan-results.json >> $GITHUB_STEP_SUMMARY
       
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## Vulnerable OS Packages" >> $GITHUB_STEP_SUMMARY
+          echo "## 🧬 Vulnerable OS Packages" >> $GITHUB_STEP_SUMMARY
           echo "| Package | Current Version | Severity | CVE | Fix Version | Fixable | Public Exploit | CISA KEV |" >> $GITHUB_STEP_SUMMARY
           echo "|---------|------------------|----------|-----|-------------|---------|----------------|-----------|" >> $GITHUB_STEP_SUMMARY
       
           jq -r '
+            def boolfmt(x): if x then "Yes" else "No" end;
+      
             (.result.osPackages // [])
             | map(select(.vulnerabilities != null))
             | map(
@@ -98,5 +100,5 @@ jobs:
             | flatten
             | sort_by(.severity)
             | .[]
-            | "| \(.name) | \(.version) | \(.severity) | \(.cve) | \(.fixVersion) | \((.fixable | if . then \"Yes\" else \"No\" end)) | \((.publicExploit | if . then \"Yes\" else \"No\" end)) | \((.cisaKev | if . then \"Yes\" else \"No\" end)) |"
+            | "| \(.name) | \(.version) | \(.severity) | \(.cve) | \(.fixVersion) | \(boolfmt(.fixable)) | \(boolfmt(.publicExploit)) | \(boolfmt(.cisaKev)) |"
           ' wiz-scan-results.json >> $GITHUB_STEP_SUMMARY
