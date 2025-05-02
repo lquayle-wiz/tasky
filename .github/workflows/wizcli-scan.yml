@@ -48,8 +48,6 @@ jobs:
 
       - name: Write Wiz Summary and OS Package Table
         run: |
-- name: Write Wiz Summary and OS Package Table
-  run: |
           echo "## 📊 Wiz Vulnerability Summary" >> $GITHUB_STEP_SUMMARY
           echo "| Severity | Count | Fixable | Public Exploit | CISA KEV |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|-------|---------|----------------|-----------|" >> $GITHUB_STEP_SUMMARY
