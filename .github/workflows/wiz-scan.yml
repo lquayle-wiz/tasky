@@ -11,37 +11,37 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-     - name: Checkout code
-       uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-     - name: Set up Docker Buildx
-       uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-     - name: Build Docker image
-       run: |
-        docker build -t tasky-app .
+      - name: Build Docker image
+        run: |
+          docker build -t tasky-app .
 
-     - name: Install WizCLI
-       run: |
-        curl -Lo wizcli https://wizcli.app.wiz.io/latest/wizcli-linux
-        chmod -x wizcli
-        sudo mv wizcli /usr/local/bin/wizcli
+      - name: Install WizCLI
+        run: |
+          curl -Lo wizcli https://wizcli.app.wiz.io/latest/wizcli-linux
+          chmod +x wizcli
+          sudo mv wizcli /usr/local/bin/wizcli
 
-     - name: Authenticate Wiz CLI
-       env:
-        WIZ_CLIENT_ID: ${{ secrets.WIZ_CLIENT_ID }}
-        WIZ_CLIENT_SECRET: ${{secrets.WIZ_CLIENT_SECRET }}
-       run: |
-        wizcli auth --client-id "$WIZ_CLIENT_ID" --client-secret "$WIZ_CLIENT_SECRET"
+      - name: Authenticate Wiz CLI
+        env:
+          WIZ_CLIENT_ID: ${{ secrets.WIZ_CLIENT_ID }}
+          WIZ_CLIENT_SECRET: ${{ secrets.WIZ_CLIENT_SECRET }}
+        run: |
+          wizcli auth --client-id "$WIZ_CLIENT_ID" --client-secret "$WIZ_CLIENT_SECRET"
 
-     - name: Scan Docker image with Wiz CLI
-       run: |
-        wizcli scan docker-image tasky-app --output-format json --output-file wiz-scan-results.json
+      - name: Scan Docker image with Wiz CLI
+        run: |
+          wizcli scan docker-image tasky-app --output-format json --output-file wiz-scan-results.json
 
       - name: Format scan summary for PR
         id: format
         run: |
-          summary=$(jq -r '"🚨 Vulnerabilities: \(.summary.vulnerabilities) | 🛡️ Severity: \(.summary.high) high, \(.summary.critical) critical"' wiz_scan_result.json)
+          summary=$(jq -r '"🚨 Vulnerabilities: \(.summary.vulnerabilities) | 🛡️ Severity: \(.summary.high) high, \(.summary.critical) critical"' wiz-scan-results.json)
           echo "summary=$summary" >> $GITHUB_OUTPUT
 
       - name: Comment on PR with results
