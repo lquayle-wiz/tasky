@@ -117,7 +117,7 @@ jobs:
               elif sev == "LOW" then 3
               else 4
               end;
-      
+          
             [
               .result.osPackages[]
               | select(.vulnerabilities != null)
@@ -128,4 +128,15 @@ jobs:
                   version: $pkg.version,
                   severity: .severity,
                   cve: .name,
-                  fixable:
+                  fixable: (has("fixResolution")),
+                  publicExploit: (.hasPublicExploit // false),
+                  cisaKev: (.isCisaKev // false),
+                  rank: (severity_rank(.severity))
+                }
+            ]
+            | sort_by(.rank)
+            | .[]
+            | "| \(.name) | \(.version) | \(.severity) | \(.cve) | \((.fixable | if . then \"Yes\" else \"No\" end)) | \((.publicExploit | if . then \"Yes\" else \"No\" end)) | \((.cisaKev | if . then \"Yes\" else \"No\" end)) |"
+          ' wiz-scan-results.json >> $GITHUB_STEP_SUMMARY
+          
+          echo "</details>" >> $GITHUB_STEP_SUMMARY
