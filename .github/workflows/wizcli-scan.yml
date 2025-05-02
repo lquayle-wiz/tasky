@@ -79,15 +79,25 @@ jobs:
             | "| \(.severity) | \(.count) | \(.fixable) | \(.publicExploit) | \(.cisaKev) |"
           ' wiz-scan-results.json >> $GITHUB_STEP_SUMMARY
       
-          echo "" >> $GITHUB_STEP_SUMMARY
           echo "## 🧬 Vulnerable OS Packages" >> $GITHUB_STEP_SUMMARY
-          echo "| Package | Version | Severity | CVE |" >> $GITHUB_STEP_SUMMARY
-          echo "|---------|---------|----------|-----|" >> $GITHUB_STEP_SUMMARY
-      
+          echo "| Package | Current Version | Severity | CVE | Fix Version |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|------------------|----------|-----|-------------|" >> $GITHUB_STEP_SUMMARY
+          
           jq -r '
-            .result.osPackages[]?
-            | select(.vulnerabilities != null)
-            | . as $pkg
-            | $pkg.vulnerabilities[]
-            | "| \($pkg.name) | \($pkg.version) | \(.severity) | \(.name) |"
+            (.result.osPackages // [])
+            | map(select(.vulnerabilities != null))
+            | map(
+                . as $pkg
+                | $pkg.vulnerabilities[]
+                | {
+                    name: $pkg.name,
+                    version: $pkg.version,
+                    severity: .severity,
+                    cve: .name,
+                    fixVersion: (.fixVersion // .fixResolution // "-")
+                  }
+              )
+            | .[]
+            | "| \(.name) | \(.version) | \(.severity) | \(.cve) | \(.fixVersion) |"
           ' wiz-scan-results.json >> $GITHUB_STEP_SUMMARY
+
