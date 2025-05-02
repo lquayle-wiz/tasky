@@ -94,7 +94,7 @@ jobs:
                     version: $pkg.version,
                     severity: .severity,
                     cve: .name,
-                    fixVersion: (.fixVersion // .fixResolution // "-")
+                    fixVersion: .fixedVersion
                   }
               )
             | .[]
