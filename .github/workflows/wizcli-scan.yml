@@ -79,7 +79,7 @@ jobs:
           echo "|----------|-------|---------|----------------|-----------|" >> $GITHUB_STEP_SUMMARY
       
           jq -r '
-            .result.osPackages[]
+            (.result.osPackages // [])
             | select(.vulnerabilities != null)
             | .vulnerabilities[]
             | {
