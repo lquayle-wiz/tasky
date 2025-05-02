@@ -46,22 +46,48 @@ jobs:
         run: |
           wizcli docker scan --image $TAG --policy "$POLICY" --output wiz-scan-results.sarif,sarif,false
 
-      - name: Output OS Package Vulnerabilities from SARIF
+      - name: Output OS Package Vulnerabilities from SARIF to Summary
         run: |
           echo "## 🧬 Vulnerable OS Packages (from SARIF)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Version | Critical | High | Medium | Low |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|---------|----------|------|--------|-----|" >> $GITHUB_STEP_SUMMARY
       
-          jq -r '
+          jq -r "$(cat <<'EOF'
             def rules_by_id:
-              (.runs[0].tool.driver.rules // []) | map({(.id): {severity: .properties.severity // "Unknown"}}) | add;
+              (.runs[0].tool.driver.rules // [])
+              | map({(.id): {severity: (.properties.severity // "Unknown")}})
+              | add;
       
-            .runs[0].results[]
-            | select(.message.text | test("OS_PACKAGE"))
-            | {
-                message: .message.text,
-                ruleId: .ruleId,
-                severity: (rules_by_id[.ruleId].severity // "Unknown")
-              }
-            | "- **Finding:** \(.message)\n  - **Severity:** \(.severity)"
-          ' wiz-scan-results.sarif >> $GITHUB_STEP_SUMMARY
-
+            def parse_package_info(msg):
+              # Extract "OS_PACKAGE: <package> <version>" from message
+              msg
+              | capture("OS_PACKAGE: (?<name>[^ ]+) (?<version>[^ ]+)")
+              ;
+      
+            def group_by_package:
+              group_by({name: .name, version: .version})
+              | map({
+                  name: .[0].name,
+                  version: .[0].version,
+                  crit: (map(select(.severity == "Critical")) | length),
+                  high: (map(select(.severity == "High")) | length),
+                  med: (map(select(.severity == "Medium")) | length),
+                  low: (map(select(.severity == "Low")) | length)
+                });
+      
+            # main logic
+            (rules_by_id) as $rules
+            | [.runs[0].results[]
+              | select(.message.text | test("OS_PACKAGE: .*"))
+              | {
+                  ruleId: .ruleId,
+                  severity: ($rules[.ruleId].severity // "Unknown"),
+                  (parse_package_info(.message.text))
+                }]
+            | group_by_package
+            | .[]
+            | "| \(.name) | \(.version) | \(.crit) | \(.high) | \(.med) | \(.low) |"
+      EOF
+          )" wiz-scan-results.sarif >> $GITHUB_STEP_SUMMARY
 
