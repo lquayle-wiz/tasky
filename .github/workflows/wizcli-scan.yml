@@ -49,9 +49,6 @@ jobs:
           echo "summary=$summary" >> $GITHUB_OUTPUT
 
       - name: Comment on PR with results
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: github/codeql-action/upload-sarif@v2
         with:
-          header: wiz-scan-summary
-          message: |
-            **🔍 Wiz Container Scan Results**
-            ${{ steps.format.outputs.summary }}
+          sarif_file: wiz-scan-results.json
