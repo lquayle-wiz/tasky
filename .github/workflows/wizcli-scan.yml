@@ -46,13 +46,10 @@ jobs:
         run: |
           wizcli docker scan --image $TAG --policy "$POLICY" --output wiz-scan-results.json,sarif,true
 
-      - name: Format scan summary for PR
-        id: format
+      - name: Append Wiz JSON to Summary
         run: |
-          summary=$(jq -r '"🚨 Vulnerabilities: \(.summary.vulnerabilities) | 🛡️ Severity: \(.summary.high) high, \(.summary.critical) critical"' wiz-scan-results.json)
-          echo "summary=$summary" >> $GITHUB_OUTPUT
+          echo "## 🧪 Full Wiz Scan JSON Output" >> $GITHUB_STEP_SUMMARY
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          cat wiz-results.json >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
 
-      - name: Comment on PR with results
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: wiz-scan-results.json
