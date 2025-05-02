@@ -52,8 +52,26 @@ jobs:
           name: wiz-scan-results
           path: wiz-scan-results.json
 
-      - name: Write OS Package Vulnerabilities to Summary
+      - name: Write Wiz Vulnerability Summary to GitHub Actions Summary
         run: |
+          echo "## 📊 Wiz Vulnerability Summary" >> $GITHUB_STEP_SUMMARY
+      
+          jq -r '
+            .result.vulnerabilities // [] 
+            | group_by(.severity) 
+            | map({ (.[0].severity): length }) 
+            | add 
+            | to_entries 
+            | sort_by(.key)
+            | map("| \(.key) | \(.value) |") 
+            | .[] 
+          ' wiz-scan-results.json | (
+            echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+            cat >> $GITHUB_STEP_SUMMARY
+          )
+      
+          echo "" >> $GITHUB_STEP_SUMMARY
           echo "## 🧬 Vulnerable OS Packages" >> $GITHUB_STEP_SUMMARY
           echo "| Package | Version | Severity | CVE |" >> $GITHUB_STEP_SUMMARY
           echo "|---------|---------|----------|-----|" >> $GITHUB_STEP_SUMMARY
