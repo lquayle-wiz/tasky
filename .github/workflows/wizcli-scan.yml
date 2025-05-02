@@ -57,14 +57,14 @@ jobs:
           echo "## Container Metadata" >> $GITHUB_STEP_SUMMARY
       
           jq -r '
-            .target as $t
+            (.target // {}) as $t
             | [
                 "| Field       | Value |",
                 "|-------------|-------|",
                 "| ID          | \($t.id // "-") |",
                 "| Registry    | \($t.registry // "-") |",
                 "| Repository  | \($t.repository // "-") |",
-                "| Tags        | \($t.tags | join(", ")) |",
+                "| Tags        | \($t.tags // [] | join(", ")) |",
                 "| Digest      | \($t.digest // "-") |",
                 "| Size        | \($t.size // 0 | tonumber / 1000000 | tostring + " MB") |",
                 "| Created At  | \($t.createdAt // "-") |",
