@@ -53,9 +53,9 @@ jobs:
           echo "|---------|---------|----------|-----|" >> $GITHUB_STEP_SUMMARY
       
           jq -r '
-            .resources[]
-            | select(.type == "OS_PACKAGE" and .vulnerabilities != null)
-            | . as $pkg
+            (.resources // [])
+            | map(select(.type == "OS_PACKAGE" and .vulnerabilities != null))
+            | .[] as $pkg
             | $pkg.vulnerabilities[]
             | "| \($pkg.name) | \($pkg.version) | \(.severity) | \(.id) |"
           ' wiz-scan-results.json >> $GITHUB_STEP_SUMMARY
