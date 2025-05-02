@@ -44,7 +44,7 @@ jobs:
 
       - name: Scan Docker image with Wiz CLI
         run: |
-          wizcli docker scan --image $TAG --policy "$POLICY" --output wiz-scan-results.json,sarif,true
+          wizcli docker scan --image $TAG --policy "$POLICY" --output wiz-scan-results.sarif,sarif,false
 
       - name: Output OS Package Vulnerabilities from SARIF
         run: |
@@ -62,6 +62,6 @@ jobs:
                 severity: (rules_by_id[.ruleId].severity // "Unknown")
               }
             | "- **Finding:** \(.message)\n  - **Severity:** \(.severity)"
-          ' wiz-results.sarif >> $GITHUB_STEP_SUMMARY
+          ' wiz-scan-results.sarif >> $GITHUB_STEP_SUMMARY
 
 
