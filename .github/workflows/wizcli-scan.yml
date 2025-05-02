@@ -50,6 +50,6 @@ jobs:
         run: |
           echo "## 🧪 Full Wiz Scan JSON Output" >> $GITHUB_STEP_SUMMARY
           echo '```json' >> $GITHUB_STEP_SUMMARY
-          cat wiz-results.json >> $GITHUB_STEP_SUMMARY
+          cat wiz-scan-results.json >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
