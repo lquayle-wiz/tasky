@@ -118,25 +118,22 @@ jobs:
               else 4
               end;
           
-            [
-              (.result.osPackages // [])
-              | select(.vulnerabilities != null)
-              | . as $pkg
-              | ($pkg.vulnerabilities // [])
-              | map({
-                  name: $pkg.name,
-                  version: $pkg.version,
-                  severity: .severity,
-                  cve: .name,
-                  fixable: (has("fixResolution")),
-                  publicExploit: (.hasPublicExploit // false),
-                  cisaKev: (.isCisaKev // false),
-                  rank: (severity_rank(.severity))
-                })
-            ]
-            | flatten
+            (.result.osPackages // [])
+            | map(select(.vulnerabilities != null))
+            | map(
+                .vulnerabilities[]
+                | {
+                    name: .packageName,
+                    version: .packageVersion,
+                    severity: .severity,
+                    cve: .name,
+                    fixable: (has("fixResolution")),
+                    publicExploit: (.hasPublicExploit // false),
+                    cisaKev: (.isCisaKev // false),
+                    rank: (severity_rank(.severity))
+                  }
+              )
             | sort_by(.rank)
             | .[]
-            | "| \(.name) | \(.version) | \(.severity) | \(.cve) | \((.fixable | if . then \"Yes\" else \"No\" end)) | \((.publicExploit | if . then \"Yes\" else \"No\" end)) | \((.cisaKev | if . then \"Yes\" else \"No\" end)) |"
-          ' wiz-scan-results.json >> $GITHUB_STEP_SUMMARY
-
+            | "| \(.name) | \(.version) | \(.severity) | \(.cve) | \((.fixable | if . then "Yes" else "No" end)) | \((.publicExploit | if . then "Yes" else "No" end)) | \((.cisaKev | if . then "Yes" else "No" end)) |"
+          ' wiz-scan-results.json >> "$GITHUB_STEP_SUMMARY"
