@@ -119,7 +119,7 @@ jobs:
               end;
           
             [
-              .result.osPackages[]
+              (.result.osPackages // [])
               | select(.vulnerabilities != null)
               | . as $pkg
               | $pkg.vulnerabilities[]
@@ -138,5 +138,4 @@ jobs:
             | .[]
             | "| \(.name) | \(.version) | \(.severity) | \(.cve) | \((.fixable | if . then \"Yes\" else \"No\" end)) | \((.publicExploit | if . then \"Yes\" else \"No\" end)) | \((.cisaKev | if . then \"Yes\" else \"No\" end)) |"
           ' wiz-scan-results.json >> $GITHUB_STEP_SUMMARY
-          
-          echo "</details>" >> $GITHUB_STEP_SUMMARY
+
