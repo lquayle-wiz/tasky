@@ -58,4 +58,4 @@ jobs:
             | . as $pkg
             | $pkg.vulnerabilities[]
             | "| \($pkg.name) | \($pkg.version) | \(.severity) | \(.id) |"
-          ' wiz-results.json >> $GITHUB_STEP_SUMMARY
+          ' wiz-scan-results.json >> $GITHUB_STEP_SUMMARY
