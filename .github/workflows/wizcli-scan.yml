@@ -52,16 +52,17 @@ jobs:
           name: wiz-scan-results
           path: wiz-scan-results.json
 
-      - name: Write OS Package Vulnerabilities from JSON to Summary
+      - name: Write OS Package Vulnerabilities to Summary
         run: |
           echo "## 🧬 Vulnerable OS Packages" >> $GITHUB_STEP_SUMMARY
           echo "| Package | Version | Severity | CVE |" >> $GITHUB_STEP_SUMMARY
           echo "|---------|---------|----------|-----|" >> $GITHUB_STEP_SUMMARY
       
           jq -r '
-            (.resources // [])
-            | map(select(.type == "OS_PACKAGE" and .vulnerabilities != null))
-            | .[] as $pkg
+            .result.osPackages[]
+            | select(.vulnerabilities != null)
+            | . as $pkg
             | $pkg.vulnerabilities[]
-            | "| \($pkg.name) | \($pkg.version) | \(.severity) | \(.id) |"
+            | "| \($pkg.name) | \($pkg.version) | \(.severity) | \(.name) |"
           ' wiz-scan-results.json >> $GITHUB_STEP_SUMMARY
+
