@@ -22,7 +22,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t tasky-app -f tasky-main/Dockerfile tasky-main
+          docker build -t $TAG -f tasky-main/Dockerfile tasky-main
 
       - name: Install WizCLI
         run: |
