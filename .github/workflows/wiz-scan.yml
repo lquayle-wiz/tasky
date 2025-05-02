@@ -38,8 +38,16 @@ jobs:
        run: |
         wizcli scan docker-image tasky-app --output-format json --output-file wiz-scan-results.json
 
-     - name: Upload scan nresults as artifact
-       uses: actions/upload-artifact@v3
-       with:
-        name: wiz-scan-results
-        path: wiz-scan-results.json
+      - name: Format scan summary for PR
+        id: format
+        run: |
+          summary=$(jq -r '"🚨 Vulnerabilities: \(.summary.vulnerabilities) | 🛡️ Severity: \(.summary.high) high, \(.summary.critical) critical"' wiz_scan_result.json)
+          echo "summary=$summary" >> $GITHUB_OUTPUT
+
+      - name: Comment on PR with results
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: wiz-scan-summary
+          message: |
+            **🔍 Wiz Container Scan Results**
+            ${{ steps.format.outputs.summary }}
