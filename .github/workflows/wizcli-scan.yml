@@ -47,7 +47,7 @@ jobs:
           wizcli docker scan --image $TAG --policy "$POLICY" --output wiz-scan-results.json,json,false --no-publish
 
       - name: Upload Wiz Scan JSON result
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wiz-scan-results
           path: wiz-scan-results.json
