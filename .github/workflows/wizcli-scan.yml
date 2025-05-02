@@ -48,7 +48,9 @@ jobs:
 
       - name: Write Wiz Summary and OS Package Table
         run: |
-          echo "## Wiz Vulnerability Summary" >> $GITHUB_STEP_SUMMARY
+- name: Write Wiz Summary and OS Package Table
+  run: |
+          echo "## 📊 Wiz Vulnerability Summary" >> $GITHUB_STEP_SUMMARY
           echo "| Severity | Count | Fixable | Public Exploit | CISA KEV |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|-------|---------|----------------|-----------|" >> $GITHUB_STEP_SUMMARY
       
@@ -56,9 +58,9 @@ jobs:
             [.result.osPackages[]? | select(.vulnerabilities != null) | .vulnerabilities[]]
             | map({
                 severity: .severity,
-                fixable: (has("fixResolution")),
-                publicExploit: (.hasPublicExploit // false),
-                cisaKev: (.isCisaKev // false)
+                fixable: (.fixedVersion // "" | length > 0),
+                publicExploit: (.hasExploit // false),
+                cisaKev: (.hasCisaKevExploit // false)
               })
             | group_by(.severity)
             | map({
