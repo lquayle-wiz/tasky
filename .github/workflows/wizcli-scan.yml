@@ -56,9 +56,9 @@ jobs:
             [.result.osPackages[]? | select(.vulnerabilities != null) | .vulnerabilities[]]
             | map({
                 severity: .severity,
-                fixable: (.fixedVersion // "" | length > 0),
-                publicExploit: (.hasExploit // false),
-                cisaKev: (.hasCisaKevExploit // false)
+                fixable: (.fixedVersion != null),
+                publicExploit: (.hasExploit == true),
+                cisaKev: (.hasCisaKevExploit == true)
               })
             | group_by(.severity)
             | map({
@@ -75,8 +75,8 @@ jobs:
       
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## Vulnerable OS Packages" >> $GITHUB_STEP_SUMMARY
-          echo "| Package | Current Version | Severity | CVE | Fix Version |" >> $GITHUB_STEP_SUMMARY
-          echo "|---------|------------------|----------|-----|-------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Current Version | Severity | CVE | Fix Version | Fixable | Public Exploit | CISA KEV |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|------------------|----------|-----|-------------|---------|----------------|-----------|" >> $GITHUB_STEP_SUMMARY
       
           jq -r '
             (.result.osPackages // [])
@@ -89,10 +89,14 @@ jobs:
                     version: $pkg.version,
                     severity: .severity,
                     cve: .name,
-                    fixVersion: (.fixedVersion // "-")
+                    fixVersion: (.fixedVersion // "-"),
+                    fixable: (.fixedVersion != null),
+                    publicExploit: (.hasExploit == true),
+                    cisaKev: (.hasCisaKevExploit == true)
                   }
               )
+            | flatten
+            | sort_by(.severity)
             | .[]
-            | "| \(.name) | \(.version) | \(.severity) | \(.cve) | \(.fixVersion) |"
+            | "| \(.name) | \(.version) | \(.severity) | \(.cve) | \(.fixVersion) | \((.fixable | if . then \"Yes\" else \"No\" end)) | \((.publicExploit | if . then \"Yes\" else \"No\" end)) | \((.cisaKev | if . then \"Yes\" else \"No\" end)) |"
           ' wiz-scan-results.json >> $GITHUB_STEP_SUMMARY
-
