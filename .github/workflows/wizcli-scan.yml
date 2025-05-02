@@ -40,7 +40,7 @@ jobs:
 
       - name: Scan Docker image with Wiz CLI
         run: |
-          wizcli docker scan --image $TAG --policy "$POLICY" --output-file wiz-scan-results.json,sarif,true
+          wizcli docker scan --image $TAG --policy "$POLICY" --output wiz-scan-results.json,sarif,true
 
       - name: Format scan summary for PR
         id: format
