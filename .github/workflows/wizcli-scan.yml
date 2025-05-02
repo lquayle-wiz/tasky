@@ -46,15 +46,9 @@ jobs:
         run: |
           wizcli docker scan --image $TAG --policy "$POLICY" --output wiz-scan-results.json,json,false --no-publish
 
-      - name: Upload Wiz Scan JSON result
-        uses: actions/upload-artifact@v4
-        with:
-          name: wiz-scan-results
-          path: wiz-scan-results.json
-
       - name: Write Wiz Summary and OS Package Table
         run: |
-          echo "## 📊 Wiz Vulnerability Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## Wiz Vulnerability Summary" >> $GITHUB_STEP_SUMMARY
           echo "| Severity | Count | Fixable | Public Exploit | CISA KEV |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|-------|---------|----------------|-----------|" >> $GITHUB_STEP_SUMMARY
       
@@ -79,7 +73,7 @@ jobs:
             | "| \(.severity) | \(.count) | \(.fixable) | \(.publicExploit) | \(.cisaKev) |"
           ' wiz-scan-results.json >> $GITHUB_STEP_SUMMARY
       
-          echo "## 🧬 Vulnerable OS Packages" >> $GITHUB_STEP_SUMMARY
+          echo "## Vulnerable OS Packages" >> $GITHUB_STEP_SUMMARY
           echo "| Package | Current Version | Severity | CVE | Fix Version |" >> $GITHUB_STEP_SUMMARY
           echo "|---------|------------------|----------|-----|-------------|" >> $GITHUB_STEP_SUMMARY
           
