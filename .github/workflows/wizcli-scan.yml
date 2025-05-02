@@ -57,8 +57,8 @@ jobs:
             | map({
                 severity: .severity,
                 fixable: (.fixedVersion // "" | length > 0),
-                publicExploit: (.hasExploit // false),
-                cisaKev: (.hasCisaKevExploit // false)
+                publicExploit: (.hasExploit // "" | length >0),
+                cisaKev: (.cisaKev // "" | length >0)
               })
             | group_by(.severity)
             | map({
@@ -66,7 +66,7 @@ jobs:
                 count: length,
                 fixable: map(select(.fixable)) | length,
                 publicExploit: map(select(.publicExploit)) | length,
-                cisaKev: map(select(.cisaKev)) | length
+                cisaKev: map(select(.hasCisaKevExploit)) | length
               })
             | sort_by(.severity)
             | .[]
