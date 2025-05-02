@@ -122,8 +122,8 @@ jobs:
               (.result.osPackages // [])
               | select(.vulnerabilities != null)
               | . as $pkg
-              | $pkg.vulnerabilities[]
-              | {
+              | ($pkg.vulnerabilities // [])
+              | map({
                   name: $pkg.name,
                   version: $pkg.version,
                   severity: .severity,
@@ -132,8 +132,9 @@ jobs:
                   publicExploit: (.hasPublicExploit // false),
                   cisaKev: (.isCisaKev // false),
                   rank: (severity_rank(.severity))
-                }
+                })
             ]
+            | flatten
             | sort_by(.rank)
             | .[]
             | "| \(.name) | \(.version) | \(.severity) | \(.cve) | \((.fixable | if . then \"Yes\" else \"No\" end)) | \((.publicExploit | if . then \"Yes\" else \"No\" end)) | \((.cisaKev | if . then \"Yes\" else \"No\" end)) |"
