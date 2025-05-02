@@ -46,10 +46,22 @@ jobs:
         run: |
           wizcli docker scan --image $TAG --policy "$POLICY" --output wiz-scan-results.json,sarif,true
 
-      - name: Append Wiz JSON to Summary
+      - name: Output OS Package Vulnerabilities from SARIF
         run: |
-          echo "## 🧪 Full Wiz Scan JSON Output" >> $GITHUB_STEP_SUMMARY
-          echo '```json' >> $GITHUB_STEP_SUMMARY
-          cat wiz-scan-results.json >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "## 🧬 Vulnerable OS Packages (from SARIF)" >> $GITHUB_STEP_SUMMARY
+      
+          jq -r '
+            def rules_by_id:
+              (.runs[0].tool.driver.rules // []) | map({(.id): {severity: .properties.severity // "Unknown"}}) | add;
+      
+            .runs[0].results[]
+            | select(.message.text | test("OS_PACKAGE"))
+            | {
+                message: .message.text,
+                ruleId: .ruleId,
+                severity: (rules_by_id[.ruleId].severity // "Unknown")
+              }
+            | "- **Finding:** \(.message)\n  - **Severity:** \(.severity)"
+          ' wiz-results.sarif >> $GITHUB_STEP_SUMMARY
+
 
