@@ -14,9 +14,9 @@ jobs:
   build-and-scan:
     runs-on: ubuntu-latest
     env:
-     TAG: "lq-docker-tag"
-     POLICY: "LQUAYLE vulnerabilities policy"
-     
+      TAG: "lq-docker-tag"
+      POLICY: "LQUAYLE vulnerabilities policy"
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -46,25 +46,25 @@ jobs:
         run: |
           wizcli docker scan --image $TAG --policy "$POLICY" --output wiz-scan-results.sarif,sarif,false
 
-      - name: Output OS Package Vulnerabilities from SARIF to Summary
+      - name: Output SARIF OS Package Vulnerabilities to Summary
+        shell: bash
         run: |
           echo "## 🧬 Vulnerable OS Packages (from SARIF)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Package | Version | Critical | High | Medium | Low |" >> $GITHUB_STEP_SUMMARY
           echo "|---------|---------|----------|------|--------|-----|" >> $GITHUB_STEP_SUMMARY
-      
+
           jq -r "$(cat <<'EOF'
             def rules_by_id:
               (.runs[0].tool.driver.rules // [])
               | map({(.id): {severity: (.properties.severity // "Unknown")}})
               | add;
-      
+
             def parse_package_info(msg):
-              # Extract "OS_PACKAGE: <package> <version>" from message
               msg
               | capture("OS_PACKAGE: (?<name>[^ ]+) (?<version>[^ ]+)")
               ;
-      
+
             def group_by_package:
               group_by({name: .name, version: .version})
               | map({
@@ -75,8 +75,7 @@ jobs:
                   med: (map(select(.severity == "Medium")) | length),
                   low: (map(select(.severity == "Low")) | length)
                 });
-      
-            # main logic
+
             (rules_by_id) as $rules
             | [.runs[0].results[]
               | select(.message.text | test("OS_PACKAGE: .*"))
@@ -88,6 +87,5 @@ jobs:
             | group_by_package
             | .[]
             | "| \(.name) | \(.version) | \(.crit) | \(.high) | \(.med) | \(.low) |"
-      EOF
+EOF
           )" wiz-scan-results.sarif >> $GITHUB_STEP_SUMMARY
-
