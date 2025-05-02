@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
      TAG: "lq-docker-tag"
-     POLICY: "LQUAYLE-VULN-AUDIT"
+     POLICY: "LQUAYLE vulnerabilities policy"
      
     steps:
       - name: Checkout code
