@@ -19,7 +19,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t tasky-app .
+          docker build -t tasky-app ./tasky/tasky-main
 
       - name: Install WizCLI
         run: |
