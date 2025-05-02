@@ -74,9 +74,25 @@ jobs:
           echo "|---------|---------|----------|-----|" >> $GITHUB_STEP_SUMMARY
       
           jq -r '
+            def severity_rank(sev):
+              if sev == "CRITICAL" then 0
+              elif sev == "HIGH" then 1
+              elif sev == "MEDIUM" then 2
+              elif sev == "LOW" then 3
+              else 4
+              end;
+      
             .result.osPackages[]
             | select(.vulnerabilities != null)
             | . as $pkg
             | $pkg.vulnerabilities[]
-            | "| \($pkg.name) | \($pkg.version) | \(.severity) | \(.name) |"
+            | {
+                name: $pkg.name,
+                version: $pkg.version,
+                severity: .severity,
+                cve: .name,
+                rank: (severity_rank(.severity))
+              }
+            | sort_by(.rank)
+            | "| \(.name) | \(.version) | \(.severity) | \(.cve) |"
           ' wiz-scan-results.json >> $GITHUB_STEP_SUMMARY
