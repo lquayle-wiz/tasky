@@ -44,50 +44,18 @@ jobs:
 
       - name: Scan Docker image with Wiz CLI
         run: |
-          wizcli docker scan --image $TAG --policy "$POLICY" --output wiz-scan-results.sarif,sarif,false --no-publish
+          wizcli docker scan --image $TAG --policy "$POLICY" --output wiz-scan-results.json,json,false --no-publish
 
-      - name: Output SARIF OS Package Vulnerabilities to Summary
-        shell: bash
+      - name: Write OS Package Vulnerabilities from JSON to Summary
         run: |
-          echo "## 🧬 Vulnerable OS Packages (from SARIF)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Package | Version | Critical | High | Medium | Low |" >> $GITHUB_STEP_SUMMARY
-          echo "|---------|---------|----------|------|--------|-----|" >> $GITHUB_STEP_SUMMARY
+          echo "## 🧬 Vulnerable OS Packages" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Version | Severity | CVE |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|---------|----------|-----|" >> $GITHUB_STEP_SUMMARY
       
           jq -r '
-            def rules_by_id:
-              (.runs[0].tool.driver.rules // [])
-              | map({(.id): {severity: (.properties.severity // "Unknown")}})
-              | add;
-          
-            def parse_package_info(msg):
-              msg
-              | capture("OS_PACKAGE: (?<name>[^ ]+) (?<version>[^ ]+)")
-              ;
-          
-            def group_by_package:
-              group_by({name: .name, version: .version})
-              | map({
-                  name: .[0].name,
-                  version: .[0].version,
-                  crit: (map(select(.severity == "Critical")) | length),
-                  high: (map(select(.severity == "High")) | length),
-                  med: (map(select(.severity == "Medium")) | length),
-                  low: (map(select(.severity == "Low")) | length)
-                });
-          
-            (rules_by_id) as $rules
-            | [.runs[0].results[]
-              | select(.message.text | test("OS_PACKAGE: .*"))
-              | (
-                  {
-                    ruleId: .ruleId,
-                    severity: ($rules[.ruleId].severity // "Unknown")
-                  } + (parse_package_info(.message.text))
-                )
-            ]
-            | group_by_package
-            | .[]
-            | "| \(.name) | \(.version) | \(.crit) | \(.high) | \(.med) | \(.low) |"
-          ' wiz-scan-results.sarif >> $GITHUB_STEP_SUMMARY
-
+            .resources[]
+            | select(.type == "OS_PACKAGE" and .vulnerabilities != null)
+            | . as $pkg
+            | $pkg.vulnerabilities[]
+            | "| \($pkg.name) | \($pkg.version) | \(.severity) | \(.id) |"
+          ' wiz-results.json >> $GITHUB_STEP_SUMMARY
