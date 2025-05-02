@@ -1,0 +1,45 @@
+name: Docker Build and Wiz CLI Scan
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  build and scan:
+    runs on: ubuntu-latest
+
+    steps:
+     - name: Checkout code
+       uses: actions/checkout@v3
+
+     - name: Set up Docker Buildx
+       uses: docker/setup-buildx-action@v3
+
+     - name: Build Docker image
+       run: |
+        docker build -t tasky-app .
+
+     - name: Install WizCLI
+       run: |
+        curl -Lo wizcli https://wizcli.app.wiz.io/latest/wizcli-linux
+        chmod -x wizcli
+        sudo mv wizcli /usr/local/bin/wizcli
+
+     - name: Authenticate Wiz CLI
+       env:
+        WIZ_CLIENT_ID: ${{ secrets.WIZ_CLIENT_ID }}
+        WIZ_CLIENT_SECRET: ${{secrets.WIZ_CLIENT_SECRET }}
+       run: |
+        wizcli auth --client-id "$WIZ_CLIENT_ID" --client-secret "$WIZ_CLIENT_SECRET"
+
+     - name: Scan Docker image with Wiz CLI
+       run: |
+        wizcli scan docker-image tasky-app --output-format json --output-file wiz-scan-results.json
+
+     - name: Upload scan nresults as artifact
+       uses: actions/upload-artifact@v3
+       with:
+        name: wiz-scan-results
+        path: wiz-scan-results.json
