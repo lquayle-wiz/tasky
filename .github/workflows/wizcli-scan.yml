@@ -56,17 +56,17 @@ jobs:
             [.result.osPackages[]? | select(.vulnerabilities != null) | .vulnerabilities[]]
             | map({
                 severity: .severity,
-                fixable: (.fixedVersion != null),
-                publicExploit: (.hasExploit == true),
-                cisaKev: (.hasCisaKevExploit == true)
+                fixable: (has("fixedVersion") and .fixedVersion != null),
+                publicExploit: (.hasExploit // false),
+                cisaKev: (.hasCisaKevExploit // false)
               })
             | group_by(.severity)
             | map({
                 severity: .[0].severity,
                 count: length,
                 fixable: map(select(.fixable)) | length,
-                publicExploit: map(select(.publicExploit)) | length,
-                cisaKev: map(select(.cisaKev)) | length
+                publicExploit: map(select(.publicExploit == true)) | length,
+                cisaKev: map(select(.cisaKev == true)) | length
               })
             | sort_by(.severity)
             | .[]
