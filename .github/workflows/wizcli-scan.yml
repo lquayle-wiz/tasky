@@ -73,6 +73,7 @@ jobs:
                 }
               )
             ]
+            | map(select(.severity != null and .severity != "UNKNOWN"))
             | group_by(.severity)
             | map({
                 severity: .[0].severity,
@@ -89,7 +90,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## 🧬 Detailed Vulnerabilities (Grouped by Severity)" >> $GITHUB_STEP_SUMMARY
 
-          for severity in CRITICAL HIGH MEDIUM LOW UNKNOWN; do
+          for severity in CRITICAL HIGH MEDIUM LOW; do
             echo "<details><summary>Severity: $severity</summary>" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "| Type | Name | Version | CVE | Fix Version | Fixable | Public Exploit | CISA KEV |" >> $GITHUB_STEP_SUMMARY
