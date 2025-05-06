@@ -46,18 +46,48 @@ jobs:
         run: |
           wizcli docker scan --image $TAG --policy "$POLICY" --output wiz-scan-results.json,json,false --no-publish
 
-      - name: Write CISA KEV Vulnerability Digest
+      - name: Write Wiz Summary and OS Package Table
         run: |
-          echo "## 🛡️ CISA KEV Vulnerabilities (Grouped by Severity & Resource Type)" >> $GITHUB_STEP_SUMMARY
-          
+          echo "## 📊 Wiz Vulnerability Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Severity | Count | Fixable | Public Exploit | CISA KEV |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|---------|----------------|-----------|" >> $GITHUB_STEP_SUMMARY
+
           jq -r '
-            def boolfmt(x): if x == true then "Yes" else "No" end;
-          
             [.resources[]? 
               | select(.vulnerabilities != null)
               | . as $res
               | $res.vulnerabilities[]
-              | select(.hasCisaKevExploit == true)
+              | {
+                  severity: .severity,
+                  fixable: (.fixedVersion != null),
+                  publicExploit: (.hasExploit == true),
+                  cisaKev: (.hasCisaKevExploit == true)
+                }]
+            | group_by(.severity)
+            | map({
+                severity: .[0].severity,
+                count: length,
+                fixable: map(select(.fixable)) | length,
+                publicExploit: map(select(.publicExploit)) | length,
+                cisaKev: map(select(.cisaKev)) | length
+              })
+            | sort_by(.severity)
+            | .[]
+            | "| \(.severity) | \(.count) | \(.fixable) | \(.publicExploit) | \(.cisaKev) |"
+          ' wiz-scan-results.json >> $GITHUB_STEP_SUMMARY
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🧬 Vulnerable Resources (CISA & Exploitable)" >> $GITHUB_STEP_SUMMARY
+          echo "| Resource | Type | Version | Severity | CVE | Fix Version | Fixable | Public Exploit | CISA KEV |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|------|---------|----------|-----|-------------|---------|----------------|-----------|" >> $GITHUB_STEP_SUMMARY
+
+          jq -r '
+            def boolfmt(x): if x == true then "Yes" else "No" end;
+
+            [.resources[]? 
+              | select(.vulnerabilities != null)
+              | . as $res
+              | $res.vulnerabilities[]
               | {
                   name: $res.name,
                   type: $res.type,
@@ -65,18 +95,13 @@ jobs:
                   severity: .severity,
                   cve: .name,
                   fixVersion: (.fixedVersion // "-"),
-                  fixable: (has("fixedVersion") and .fixedVersion != null),
-                  publicExploit: (.hasExploit // false)
+                  fixable: (.fixedVersion != null),
+                  publicExploit: (.hasExploit == true),
+                  cisaKev: (.hasCisaKevExploit == true)
                 }]
-            | group_by(.severity)
-            | .[] 
-            | group_by(.type)
-            | .[] 
-            | .[0] as $header
-            | "### Severity: \($header.severity) | Type: \($header.type)\n" +
-              "| Resource | Version | CVE | Fix Version | Fixable | Public Exploit |\n" +
-              "|----------|---------|-----|-------------|---------|----------------|\n" +
-              (map("| \(.name) | \(.version) | \(.cve) | \(.fixVersion) | \(boolfmt(.fixable)) | \(boolfmt(.publicExploit)) |") | join("\n"))
+            | sort_by(.severity)
+            | .[]
+            | "| \(.name) | \(.type) | \(.version) | \(.severity) | \(.cve) | \(.fixVersion) | \(boolfmt(.fixable)) | \(boolfmt(.publicExploit)) | \(boolfmt(.cisaKev)) |"
           ' wiz-scan-results.json >> $GITHUB_STEP_SUMMARY
 
 
